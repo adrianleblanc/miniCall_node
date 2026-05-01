@@ -13,20 +13,32 @@ export const getClients = async (req: Request, res: Response) => {
 
 export const bulkInsertClients = async (req: Request, res: Response) => {
   try {
-    const clients = req.body;
+    const { clients, fileName } = req.body;
     
     if (!Array.isArray(clients) || clients.length === 0) {
       return res.status(400).json({ error: 'Datos inválidos o vacíos' });
     }
+
+    const archivo_nombre = fileName || 'Carga manual / sin nombre';
 
     // Usaremos transacciones para el bulk insert
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
       
+      // 1. Registrar la carga
+      const insertCargaQuery = `
+        INSERT INTO cargas_archivos (nombre_archivo, cantidad_registros)
+        VALUES ($1, $2)
+        RETURNING id
+      `;
+      const cargaResult = await client.query(insertCargaQuery, [archivo_nombre, clients.length]);
+      const cargaId = cargaResult.rows[0].id;
+
+      // 2. Insertar clientes
       const insertQuery = `
-        INSERT INTO clientes (rut, nombre, apellidos, telefono, estado_gestion)
-        VALUES ($1, $2, $3, $4, $5)
+        INSERT INTO clientes (rut, nombre, apellidos, telefono, estado_gestion, carga_id)
+        VALUES ($1, $2, $3, $4, $5, $6)
         RETURNING *
       `;
 
@@ -39,12 +51,16 @@ export const bulkInsertClients = async (req: Request, res: Response) => {
         const telefono = c.teléfono || c.telefono || c.tel || null;
         const estado_gestion = c.estado_gestion || 'Sin gestión';
         
-        const result = await client.query(insertQuery, [rut, nombre, apellidos, telefono, estado_gestion]);
+        const result = await client.query(insertQuery, [rut, nombre, apellidos, telefono, estado_gestion, cargaId]);
         insertedClients.push(result.rows[0]);
       }
       
       await client.query('COMMIT');
-      res.status(201).json({ message: 'Clientes insertados correctamente', count: insertedClients.length });
+      res.status(201).json({ 
+        message: 'Clientes insertados correctamente', 
+        carga_id: cargaId,
+        count: insertedClients.length 
+      });
     } catch (e) {
       await client.query('ROLLBACK');
       throw e;
