@@ -43,13 +43,25 @@ export const bulkInsertClients = async (req: Request, res: Response) => {
       `;
 
       const insertedClients = [];
+
+      // Helper: normaliza el objeto del Excel para buscar keys sin importar mayusculas/minusculas
+      const normalizeRow = (row: Record<string, unknown>): Record<string, unknown> => {
+        const normalized: Record<string, unknown> = {};
+        for (const key of Object.keys(row)) {
+          // Eliminar espacios y acentos comunes, convertir a minusculas
+          normalized[key.toLowerCase().trim()] = row[key];
+        }
+        return normalized;
+      };
       
-      for (const c of clients) {
-        const rut = c.rut || c['r.u.t'] || c['r.u.t.'] || null;
-        const nombre = c.nombre || c.nombres || c.name || null;
-        const apellidos = c.apellidos || c.apellido || null;
-        const telefono = c.teléfono || c.telefono || c.tel || null;
-        const estado_gestion = c.estado_gestion || 'Sin gestión';
+      for (const rawRow of clients) {
+        const c = normalizeRow(rawRow as Record<string, unknown>);
+        // Buscar variaciones comunes de cada columna
+        const rut = c['rut'] || c['r.u.t'] || c['r.u.t.'] || c['rut.'] || null;
+        const nombre = c['nombre'] || c['nombres'] || c['name'] || c['first name'] || null;
+        const apellidos = c['apellidos'] || c['apellido'] || c['last name'] || c['surname'] || null;
+        const telefono = c['teléfono'] || c['telefono'] || c['télefono'] || c['tel'] || c['phone'] || c['celular'] || c['móvil'] || c['movil'] || null;
+        const estado_gestion = (c['estado_gestion'] as string) || 'Sin gestión';
         
         const result = await client.query(insertQuery, [rut, nombre, apellidos, telefono, estado_gestion, cargaId]);
         insertedClients.push(result.rows[0]);
