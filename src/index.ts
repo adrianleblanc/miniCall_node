@@ -15,7 +15,12 @@ app.use(express.json({ limit: '10mb' })); // Para permitir payloads grandes de E
 // Rutas
 app.use('/api/clientes', clientRoutes);
 
-// Iniciar servidor
-app.listen(port, () => {
-  console.log(`Servidor Backend corriendo en http://localhost:${port}`);
-});
+// Iniciar servidor localmente (Vercel ignora esto si se exporta la app)
+if (process.env.NODE_ENV !== 'production') {
+  app.listen(port, () => {
+    console.log(`Servidor Backend corriendo en http://localhost:${port}`);
+  });
+}
+
+// Exportar la aplicación para Vercel Serverless Functions
+export default app;
