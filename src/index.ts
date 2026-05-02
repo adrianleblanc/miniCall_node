@@ -3,6 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import clientRoutes from './routes/client.routes';
 import authRoutes from './routes/auth.routes';
+import userRoutes from './routes/users.routes';
 import { verifyToken } from './middleware/auth.middleware';
 
 dotenv.config();
@@ -33,6 +34,7 @@ app.use(express.json({ limit: '10mb' })); // Para permitir payloads grandes de E
 
 // Rutas
 app.use('/api/auth', authRoutes);
+app.use('/api/usuarios', userRoutes);
 app.use('/api/clientes', verifyToken, clientRoutes);
 
 // Iniciar servidor localmente (Vercel ignora esto si se exporta la app)

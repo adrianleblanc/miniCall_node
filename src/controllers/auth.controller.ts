@@ -32,7 +32,7 @@ export const login = async (req: Request, res: Response) => {
     // Generar JWT
     const secret = process.env.JWT_SECRET || 'fallback_secret_cambiame';
     const token = jwt.sign(
-      { userId: usuario.id, email: usuario.email },
+      { userId: usuario.id, email: usuario.email, rol: usuario.rol },
       secret,
       { expiresIn: '8h' }
     );
