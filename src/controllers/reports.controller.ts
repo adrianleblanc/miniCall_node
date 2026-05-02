@@ -20,6 +20,7 @@ export const getReportsSummary = async (req: Request, res: Response) => {
         COUNT(h.id) as cantidad_gestiones
       FROM usuarios u
       LEFT JOIN historial_gestiones h ON u.id = h.usuario_id
+      WHERE visible = true
       GROUP BY u.id, u.nombre
       ORDER BY cantidad_gestiones DESC
     `;
@@ -44,6 +45,7 @@ export const getReportsSummary = async (req: Request, res: Response) => {
       FROM historial_gestiones h
       JOIN usuarios u ON h.usuario_id = u.id
       JOIN clientes c ON h.cliente_id = c.id
+      where u.visible = true
       ORDER BY h.fecha_gestion DESC
       LIMIT 10
     `;
